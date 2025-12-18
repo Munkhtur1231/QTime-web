@@ -1,11 +1,6 @@
-# Business Directory
-
-A full-stack business directory application built with an **Nx monorepo** architecture, combining a **SOLID-based Express API** and a **Next.js frontend** with shared libraries for type-safe database and schema management.
 
 ## Architecture
-
 ### Monorepo Structure
-
 ```
 businessdirectory/
 ├── apps/
@@ -16,16 +11,34 @@ businessdirectory/
 └── package.json      # Workspace root
 ```
 
-### Technology Stack
-
-- **Nx**: Monorepo management and build orchestration
-- **Backend (API)**: Express.js with SOLID architecture, JWT authentication, role-based access control
-- **Frontend (Web)**: Next.js 15 with multiple rendering strategies (SSG, SSR, ISR, CSR)
-- **Database**: MySQL with Prisma ORM
-- **Validation**: Zod schemas shared between API and Web
-- **TypeScript**: Full type safety across all projects
-
 ## Quick Start
+
+
+## Available Scripts
+
+```bash
+# Development
+npm run dev:api              # Run API in development mode
+npx nx dev web             # Run Next.js app
+
+# Database
+npm run db:seed              # Seed database
+npm run db:reset             # Reset and seed database
+npx nx run @businessdirectory/database:prisma:generate #This generates new shared types for front/back
+npx nx run @businessdirectory/database:prisma:push  #Applies changes to DB
+
+# Build
+npx nx build api             # Build API
+npx nx build web             # Build Next.js app
+npx nx build database        # Build database library
+
+# Lint & Type Check
+npx nx lint api              # Lint API
+npx nx lint web              # Lint Next.js app
+npx tsc --build              # TypeScript check all projects
+npx nx run-many -t lint test build typecheck #Final lint check
+
+```
 
 ### Prerequisites
 
@@ -62,8 +75,6 @@ npx nx run @businessdirectory/database:prisma:push
 # Seed database with sample data
 npm run db:seed
 
-# Open Prisma Studio (optional)
-npx nx run @businessdirectory/database:prisma:studio
 ```
 
 ### Development
@@ -77,7 +88,7 @@ nx dev web
 
 ```
 
-The API will be available at `http://localhost:3333` and the web app at `http://localhost:4200`.
+The API will be available at `http://localhost:3333` and the web app at `http://localhost:3000`.
 
 ## Shared Libraries
 
@@ -115,39 +126,6 @@ src/
 └── helpers/         # Database seeding, etc.
 ```
 
-**Key Features:**
-
-- JWT-based authentication
-- Role-based access control (ADMIN, BUSINESS_OWNER, USER)
-- Centralized error handling
-- Request validation with Zod
-- Comprehensive logging (Winston + Morgan)
-- Dynamic pagination and filtering
-
-## Available Scripts
-
-```bash
-# Development
-npm run dev:api              # Run API in development mode
-npx nx serve web             # Run Next.js app
-
-# Database
-npm run db:seed              # Seed database
-npm run db:reset             # Reset and seed database
-npx nx run @businessdirectory/database:prisma:push    # Push schema changes
-npx nx run @businessdirectory/database:prisma:studio  # Open Prisma Studio
-
-# Build
-npx nx build api             # Build API
-npx nx build web             # Build Next.js app
-npx nx build database        # Build database library
-
-# Lint & Type Check
-npx nx lint api              # Lint API
-npx nx lint web              # Lint Next.js app
-npx tsc --build              # TypeScript check all projects
-
-```
 
 ## 🔒 Authentication
 
@@ -173,13 +151,3 @@ API endpoints are organized by resource:
 - `/api/businesses` - Business listings
 - `/api/business-addresses` - Business locations
 - `/api/reviews` - Business reviews
-
-All endpoints support pagination, filtering, and sorting via query parameters.
-
-## 🛠️ Development Workflow
-
-1. Make changes to code
-2. Nx automatically rebuilds affected projects
-3. TypeScript ensures type safety across the monorepo
-4. ESLint enforces code quality
-5. Shared schemas keep API and Web in sync
