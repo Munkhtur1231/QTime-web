@@ -1,6 +1,7 @@
+## Архитектур
 
-## Architecture
-### Monorepo Structure
+### Бүтэц
+
 ```
 businessdirectory/
 ├── apps/
@@ -11,17 +12,38 @@ businessdirectory/
 └── package.json      # Workspace root
 ```
 
-## Quick Start
+Бэлэн зүйлс/ Хийх зүйлс:
 
+1. Бэкенд Суурь ERD: User, Business, Business Admin, Business Location, Reviews зэрэг байгаа. Энийг суурь болгоод Q-Time-ийн шаардлагыг шууд нэмвэл болчих байх. (Би postman collection teams-ээр явуулъя)
+2. Database Seed- Business Location бол шууд л улаанбаатар дотор generate хийж байгаа. (Шинэ шаардлагын дагуу өөрчлөгдөх байх)
+3. Front-end газрын зураг хэсэг - Би Газруудыг Maps-аар хардгаар нүүр хуудсан дээр тавьчихлаа. Шаардлагатай бол солиорой
+4. Antd design суулгасан тул фронт дээр хуудсуудаа шууд хялбар байдлаар өрөөрэй.
+5. Typesafety давж байгаа шүү. (prisma generate хийгээд typesafety давж байгаа.)
 
-## Available Scripts
+Датабааз: prisma.schema өөрчлөлт оруулбал дараах коммандыг дуудахаар автоматаар type нь шэйр хийгдэнэ шүү. schema-аас өөр газарт өөрчлөлт оруулах шаардлагагүй
+
+### Хэрэгтэй зүйлс
+
+- At least Node.js 20.16.0!! (Анхаараарай. Хуучин дээр ажиллахгүй)
+- MySQL database
+- Git
+
+## Орчингоо бэлдэх
 
 ```bash
-# Development
+
+cp .env.example .env # Mysql-ийн баазын замаа шинэчлээрэй
+npx nx run @businessdirectory/database:prisma:generate # Exports TS types, prisma clients Заавал хийх
+npx nx run @businessdirectory/database:prisma:push # Өөрчлөлт орох DB.
+npm run db:seed
+```
+
+```bash
+# Хөгжүүлэлт
 npm run dev:api              # Run API in development mode
 npx nx dev web             # Run Next.js app
 
-# Database
+# Бааз
 npm run db:seed              # Seed database
 npm run db:reset             # Reset and seed database
 npx nx run @businessdirectory/database:prisma:generate #This generates new shared types for front/back
@@ -40,77 +62,12 @@ npx nx run-many -t lint test build typecheck #Final lint check
 
 ```
 
-### Prerequisites
-
-- At least Node.js 20.16.0!!
-- MySQL database
-- Git
-
-### Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd businessdirectory
-
-# Install dependencies
-npm install
-
-# Configure environment variables
-cp .env.example .env
-# Edit .env with your database credentials
-```
-
-### Environment Variables
-
-Create a `.env` file in the root directory:
-
-### Database Setup
-
-```bash
-# Push schema to database
-npx nx run @businessdirectory/database:prisma:generate
-npx nx run @businessdirectory/database:prisma:push
-
-# Seed database with sample data
-npm run db:seed
-
-```
-
-### Development
-
-```bash
-# Run API server
-npm run dev:api
-
-# Run Next.js frontend
-nx dev web
-
-```
-
 The API will be available at `http://localhost:3333` and the web app at `http://localhost:3000`.
 
-## Shared Libraries
+### Анхаарах (Фронт, бэк)
 
-### `@businessdirectory/database`
-
-A shared library that provides:
-
-- **Prisma Client**: Database access layer
-- **Zod Schemas**: Type-safe validation schemas for all models
-- **TypeScript Types**: Generated types from Prisma schema
-
-Both the API and Web applications import from this library to ensure consistency:
-
-```typescript
-import { prisma, CreateUserSchema, UpdateUserSchema } from '@businessdirectory/database';
-```
-
-This approach ensures:
-
-- **Single source of truth** for database schema and validation
-- **Type safety** across frontend and backend
-- **Code reusability** and maintainability
+import хийхдээ "@" ашиглахаар алдаа гараад байгаа шүү. Иймээс "../../.." илэрхийллийг ашиглаарай
+харин баазын types-ийг импорт хийхдээ @ ашиглаж байгаа шүү
 
 ## API Architecture (SOLID Principles)
 
@@ -126,7 +83,6 @@ src/
 └── helpers/         # Database seeding, etc.
 ```
 
-
 ## 🔒 Authentication
 
 The API uses JWT tokens for authentication. Protected routes require a valid token in the Authorization header:
@@ -140,14 +96,3 @@ Role-based permissions:
 - **ADMIN**: Full access to all resources
 - **BUSINESS_OWNER**: Manage own businesses and reviews
 - **USER**: Create reviews, manage own profile
-
-## 📚 API Documentation
-
-API endpoints are organized by resource:
-
-- `/api/users` - User management
-- `/api/business-parent-categories` - Parent categories
-- `/api/business-categories` - Business categories
-- `/api/businesses` - Business listings
-- `/api/business-addresses` - Business locations
-- `/api/reviews` - Business reviews

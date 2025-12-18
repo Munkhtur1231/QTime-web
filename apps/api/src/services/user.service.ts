@@ -15,7 +15,6 @@ import {
 } from '../validation/user.schema';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { jobQueue } from '../utils/simple-queue';
 
 export class UserService extends BaseService<
   User,
@@ -118,20 +117,6 @@ export class UserService extends BaseService<
         hashedPassword: false,
       },
     });
-
-    // Enqueue welcome email job (async background processing)
-    try {
-      console.log('Enqueuing welcome email job for', user.email);
-      jobQueue.enqueue('welcome_email', {
-        userId: user.id,
-        email: user.email,
-        firstName: user.firstName || 'Хэрэглэгч',
-        lastName: user.lastName || '',
-      });
-    } catch (error) {
-      // Log but don't fail user creation
-      console.error('Failed to enqueue welcome email:', error);
-    }
 
     return user as User;
   }

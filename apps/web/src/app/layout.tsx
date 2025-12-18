@@ -1,7 +1,5 @@
 import './globals.css';
-import Header from '../components/Header';
 import { JetBrains_Mono } from 'next/font/google';
-import Footer from '../components/Footer';
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
@@ -9,8 +7,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: 'Welcome to Business Directory',
-  description: 'Welcome to Business Directory',
+  title: 'Welcome to Q-Time',
+  description: 'Welcome to Q-Time',
 };
 
 export default function RootLayout({
@@ -21,9 +19,7 @@ export default function RootLayout({
   return (
     <html lang="mn">
       <body className={`${jetbrainsMono.variable} h-screen font-sans`}>
-        <Header />
         {children}
-        <Footer />
       </body>
     </html>
   );

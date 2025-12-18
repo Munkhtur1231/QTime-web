@@ -36,9 +36,7 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
       }
 
       const queryString = params.toString();
-      router.push(
-        `/yellow-books/search${queryString ? `?${queryString}` : ''}`
-      );
+      router.push(`/${queryString ? `?${queryString}` : ''}`);
     },
     [router]
   );
@@ -92,7 +90,7 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
     setQuery('');
     setIsActive('');
     setIsInsideMall('');
-    router.push('/yellow-books/search');
+    router.push('/');
   };
 
   return (
