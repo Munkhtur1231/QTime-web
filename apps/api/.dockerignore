@@ -1,0 +1,7 @@
+# API specific
+apps/api/logs
+apps/api/dist
+
+# Other apps (not needed for API build)
+apps/web
+

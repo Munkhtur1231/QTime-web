@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@theme {
+  --font-jetbrainsMono: var(--font-jetbrainsMono);
+  --font-sans: var(--font-jetbrainsMono);
+  --color-primary: #3fff86;
+  --color-secondary: #3490e6;
+  --color-tertiary: #d8ffc5;
+  --color-quaternary: #f7ffde;
+  --color-accent: #000000;
+  --color-background: #ffffff;
+  --color-foreground: #000000;
+  --color-border: #e5e7eb;
+  --color-muted: #6b7280;
+  --text-lg: 24px;
+  --text-md: 22px;
+  --text-base: 19px;
+  --text-sm: 16px;
+  --text-xs: 14px;
+}
+@layer base {
+  h1 {
+    @apply text-[48px]  leading-[1.1] font-semibold;
+  }
+  h2 {
+    @apply text-[36px] leading-[1.1] font-semibold;
+  }
+  h3 {
+    @apply text-[24px]  leading-[1.1] font-semibold;
+  }
+  body {
+    @apply font-sans  text-base bg-background text-foreground leading-loose;
+  }
+}

@@ -1,0 +1,54 @@
+# Frontend Dockerfile for Business Directory Web
+# Multi-stage build to reduce image size
+
+# Stage 1: Build
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy package files first (for better caching)
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
+COPY libs/database/package*.json ./libs/database/
+
+# Install ALL dependencies (including devDependencies for building)
+RUN npm ci --legacy-peer-deps
+
+# Copy source files
+COPY tsconfig.base.json tsconfig.json nx.json eslint.config.mjs ./
+COPY apps/web ./apps/web
+COPY libs/database ./libs/database
+
+# Generate Prisma Client (for types)
+RUN npx nx run @businessdirectory/database:prisma:generate
+
+# Build the frontend
+RUN NX_DAEMON=false npx nx sync && \
+    NX_DAEMON=false npx nx build web --prod
+
+# Stage 2: Production (minimal)
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone output (Next.js creates minimal dependencies)
+COPY --from=builder /app/apps/web/.next/standalone ./
+
+# Copy static files and public folder
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+# Copy .env file from root (shared environment variables)
+COPY --chown=nextjs:nodejs .env* ./
+
+USER nextjs
+
+EXPOSE 3000
+
+CMD ["node", "apps/web/server.js"]

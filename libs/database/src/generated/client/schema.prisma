@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+generator zod {
+  provider               = "zod-prisma-types"
+  output                 = "../src/generated/zod"
+  useMultipleFiles       = false
+  createInputTypes       = false
+  addInputTypeValidation = false
+  prismaClientPath       = "../client/index.js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
+enum VerificationTokenAction {
+  VERIFY
+  RESET
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  firstName      String?
+  lastName       String?
+  phone          String?
+  hashedPassword String?
+  role           UserRole        @default(USER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  reviews        Reviews[]
+  admins         BusinessAdmin[]
+}
+
+model VerificationToken {
+  id        Int                     @id @default(autoincrement())
+  email     String
+  token     String
+  expires   DateTime
+  createdAt DateTime                @default(now())
+  action    VerificationTokenAction
+
+  @@unique([email, action])
+}
+
+model BusinessCategory {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  businesses Business[]
+}
+
+model Business {
+  id           Int               @id @default(autoincrement())
+  name         String
+  email        String
+  photo        String
+  link         String?
+  summary      String
+  richContent  String            @db.Text
+  isActive     Boolean           @default(true)
+  isInsideMall Boolean           @default(false)
+  description  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  categoryId   Int
+  category     BusinessCategory  @relation(fields: [categoryId], references: [id])
+  addresses    BusinessAddress[]
+  reviews      Reviews[]
+  admins       BusinessAdmin[]
+}
+
+model BusinessAddress {
+  id         Int      @id @default(autoincrement())
+  businessId Int
+  business   Business @relation(fields: [businessId], references: [id])
+  address    String
+  latitude   Float
+  longitude  Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model BusinessAdmin {
+  id         Int      @id @default(autoincrement())
+  businessId Int
+  business   Business @relation(fields: [businessId], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([businessId, userId])
+}
+
+model Reviews {
+  id          Int                @id @default(autoincrement())
+  businessId  Int
+  business    Business           @relation(fields: [businessId], references: [id])
+  userId      Int
+  user        User               @relation(fields: [userId], references: [id])
+  rating      Int //up to 5.
+  comment     String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  richContent RichReviewContent?
+
+  @@unique([businessId, userId])
+}
+
+model RichReviewContent {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reviewId  Int      @unique
+  review    Reviews? @relation(fields: [reviewId], references: [id])
+}

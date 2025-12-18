@@ -1,0 +1,8 @@
+# Web specific
+apps/web/.next
+apps/web/dist
+apps/web/out
+
+# Other apps (not needed for Web build)
+apps/api
+

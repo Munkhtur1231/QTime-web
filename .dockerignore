@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+
+# Build outputs (generated inside container)
+dist
+.next
+out
+build
+
+# IDE / OS
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.github
+
+# Tests
+coverage
+.nyc_output
+__tests__
+**/*.test.*
+**/*.spec.*
+
+# Nx
+.nx
+tmp
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# Logs
+logs
+*.log

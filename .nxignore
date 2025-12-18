@@ -1,0 +1,2 @@
+# Ignore generated Prisma client from being treated as a project
+libs/database/src/generated/client
