@@ -4,13 +4,13 @@
 @theme {
   --font-jetbrainsMono: var(--font-jetbrainsMono);
   --font-sans: var(--font-jetbrainsMono);
-  --color-primary: #3fff86;
-  --color-secondary: #3490e6;
+  --color-primary: #6366f1;
+  --color-secondary: #8b5cf6;
   --color-tertiary: #d8ffc5;
   --color-quaternary: #f7ffde;
   --color-accent: #000000;
-  --color-background: #ffffff;
-  --color-foreground: #000000;
+  --color-background: #f3f4f6;
+  --color-foreground: #1f2937;
   --color-border: #e5e7eb;
   --color-muted: #6b7280;
   --text-lg: 24px;

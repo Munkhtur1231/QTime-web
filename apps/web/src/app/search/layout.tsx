@@ -1,6 +1,7 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-export default function ClientLayout({
+
+export default function SearchLayout({
   children,
 }: {
   children: React.ReactNode;
