@@ -1,15 +1,15 @@
 import AppHeader from '../../components/AppHeader';
 import Footer from '../../components/Footer';
 
-export default function SearchLayout({
+export default function YellowBooksLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <AppHeader />
-      {children}
+      <main className="flex-1">{children}</main>
       <Footer />
     </div>
   );

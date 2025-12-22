@@ -34,7 +34,7 @@ export default async function SearchPage({
         longitude: addr.longitude,
         address: addr.address,
       }))
-    );
+  );
 
   return (
     <div className="flex mb-10 mt-10 justify-center items-center flex-col w-full">

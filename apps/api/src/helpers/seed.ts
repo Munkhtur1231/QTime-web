@@ -82,19 +82,55 @@ const categories = [
     icon: 'FaSpa',
   },
 ];
-const businessNames = [
-  'Urban Eats',
-  'Tech Hub',
-  'Green Market',
-  'Quick Fix Auto',
-  'Wellness Center',
-  'Book Haven',
-  'Coffee Corner',
-  'Fitness First',
-  'Pet Paradise',
-  'Home Depot',
-  'Fashion Forward',
-  'Digital Dreams',
+const demoBusinesses = [
+  {
+    name: 'Luxury Hair Salon',
+    categoryKey: 'salon',
+    location: 'Сүхбаатар дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&h=300&fit=crop',
+    services: ['Үс засах', 'Буржгар хийх', 'Будах'],
+  },
+  {
+    name: 'Beauty & Spa Center',
+    categoryKey: 'beauty',
+    location: 'Чингэлтэй дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=400&h=300&fit=crop',
+    services: ['Маникюр', 'Педикюр', 'Массаж'],
+  },
+  {
+    name: 'Dental Care Clinic',
+    categoryKey: 'dental',
+    location: 'Баянгол дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop',
+    services: ['Шүдний үзлэг', 'Цэвэрлэгээ', 'Сувилал'],
+  },
+  {
+    name: 'Wellness Massage',
+    categoryKey: 'massage',
+    location: 'Хан-Уул дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=300&fit=crop',
+    services: ['Массаж', 'СПА', 'Физик эмчилгээ'],
+  },
+  {
+    name: 'Medical Center',
+    categoryKey: 'medical',
+    location: 'Сонгинохайрхан дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=300&fit=crop',
+    services: ['Ерөнхий үзлэг', 'Шинжилгээ', 'Зөвлөгөө'],
+  },
+  {
+    name: 'Premium Barbershop',
+    categoryKey: 'salon',
+    location: 'Сүхбаатар дүүрэг',
+    photo:
+      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=300&fit=crop',
+    services: ['Үс засах', 'Сахал засах', 'Massage'],
+  },
 ];
 
 const addresses = [
@@ -205,29 +241,33 @@ async function seedCategories(parentCats: any[]) {
 async function seedBusinesses(categories: any[]) {
   console.log('🏢 Seeding businesses...');
 
-  // Ensure each category gets at least one business
-  // Distribute businesses evenly across categories
-  const businessesPerCategory = Math.ceil(
-    businessNames.length / categories.length
-  );
+  const categoryMap: Record<string, string> = {
+    salon: 'Beauty & Wellness',
+    beauty: 'Beauty & Wellness',
+    massage: 'Beauty & Wellness',
+    dental: 'Healthcare',
+    medical: 'Healthcare',
+  };
 
   const businesses = await Promise.all(
-    businessNames.map((name, i) => {
-      // Cycle through categories to ensure distribution
-      const categoryIndex = i % categories.length;
-      const category = categories[categoryIndex];
+    demoBusinesses.map((biz, i) => {
+      const mappedCategoryName =
+        categoryMap[biz.categoryKey] || categories[0].name;
+      const category =
+        categories.find((c) => c.name === mappedCategoryName) || categories[0];
+      const slugBase = biz.name.toLowerCase().replace(/\s+/g, '');
 
       return prisma.business.create({
         data: {
-          name,
-          email: `${name.toLowerCase().replace(/\s+/g, '')}@business.mn`,
-          photo: `https://picsum.photos/seed/${i}/800/600`,
-          link: `https://www.${name.toLowerCase().replace(/\s+/g, '')}.mn`,
-          summary: `${name} - Your trusted partner in ${category.name.toLowerCase()}`,
+          name: biz.name,
+          email: `${slugBase}@business.mn`,
+          photo: biz.photo,
+          link: `https://www.${slugBase}.mn`,
+          summary: `${biz.name} - ${biz.services.join(', ')}`,
           richContent: html,
-          description: `Welcome to ${name}. We have been serving the community for years with dedication and quality.`,
-          isActive: randomInt(0, 10) > 1, // 90% active
-          isInsideMall: randomInt(0, 1) === 1,
+          description: `Welcome to ${biz.name}. We have been serving the community for years with dedication and quality.`,
+          isActive: true,
+          isInsideMall: false,
           categoryId: category.id,
         },
       });
@@ -235,9 +275,6 @@ async function seedBusinesses(categories: any[]) {
   );
 
   console.log(`✅ Created ${businesses.length} businesses`);
-  console.log(
-    `📊 Business distribution: ${businessesPerCategory} businesses per category (approximately)`
-  );
   return businesses;
 }
 
@@ -254,18 +291,17 @@ async function seedBusinessAddresses(businesses: any[]) {
   const UB_LNG_MAX = 107.0;
 
   const businessAddresses = await Promise.all(
-    businesses.flatMap((business) =>
-      Array.from({ length: randomInt(1, 3) }, () =>
-        prisma.businessAddress.create({
-          data: {
-            businessId: business.id,
-            address: randomChoice(addresses),
-            latitude: randomFloat(UB_LAT_MIN, UB_LAT_MAX), // Ulaanbaatar coordinates
-            longitude: randomFloat(UB_LNG_MIN, UB_LNG_MAX), // Ulaanbaatar longitude range
-          },
-        })
-      )
-    )
+    businesses.map((business) => {
+      const match = demoBusinesses.find((b) => b.name === business.name);
+      return prisma.businessAddress.create({
+        data: {
+          businessId: business.id,
+          address: match?.location || randomChoice(addresses),
+          latitude: randomFloat(UB_LAT_MIN, UB_LAT_MAX), // Ulaanbaatar coordinates
+          longitude: randomFloat(UB_LNG_MIN, UB_LNG_MAX), // Ulaanbaatar longitude range
+        },
+      });
+    })
   );
 
   console.log(`✅ Created ${businessAddresses.length} business addresses`);

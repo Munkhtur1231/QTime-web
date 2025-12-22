@@ -36,7 +36,7 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
       }
 
       const queryString = params.toString();
-      router.push(`/${queryString ? `?${queryString}` : ''}`);
+      router.push(`/search${queryString ? `?${queryString}` : ''}`);
     },
     [router]
   );
@@ -48,7 +48,6 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
   useEffect(() => {
     // Skip initial render
     if (isFirstRender.current) {
-      isFirstRender.current = false;
       return;
     }
 
@@ -72,8 +71,9 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
 
   // Immediate search for select changes
   useEffect(() => {
-    // Skip initial render
     if (isFirstRender.current) {
+      // Mark as mounted after the very first render
+      isFirstRender.current = false;
       return;
     }
 
@@ -90,7 +90,7 @@ export default function FiltersClient({ initial }: FiltersClientProps) {
     setQuery('');
     setIsActive('');
     setIsInsideMall('');
-    router.push('/');
+    router.push('/search');
   };
 
   return (

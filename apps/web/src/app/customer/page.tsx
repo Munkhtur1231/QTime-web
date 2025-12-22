@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Input,
   Select,
@@ -20,6 +20,8 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import AppHeader from '../../components/AppHeader';
 
 const { Option } = Select;
 
@@ -28,6 +30,7 @@ const services = [
   {
     id: 1,
     name: 'Luxury Hair Salon',
+    businessId: 1,
     category: 'salon',
     location: 'Сүхбаатар дүүрэг',
     rating: 4.8,
@@ -40,6 +43,7 @@ const services = [
   {
     id: 2,
     name: 'Beauty & Spa Center',
+    businessId: 2,
     category: 'beauty',
     location: 'Чингэлтэй дүүрэг',
     rating: 4.9,
@@ -52,6 +56,7 @@ const services = [
   {
     id: 3,
     name: 'Dental Care Clinic',
+    businessId: 3,
     category: 'dental',
     location: 'Баянгол дүүрэг',
     rating: 4.7,
@@ -64,6 +69,7 @@ const services = [
   {
     id: 4,
     name: 'Wellness Massage',
+    businessId: 4,
     category: 'massage',
     location: 'Хан-Уул дүүрэг',
     rating: 4.6,
@@ -76,6 +82,7 @@ const services = [
   {
     id: 5,
     name: 'Medical Center',
+    businessId: 5,
     category: 'medical',
     location: 'Сонгинохайрхан дүүрэг',
     rating: 4.5,
@@ -88,6 +95,7 @@ const services = [
   {
     id: 6,
     name: 'Premium Barbershop',
+    businessId: 6,
     category: 'salon',
     location: 'Сүхбаатар дүүрэг',
     rating: 4.9,
@@ -100,13 +108,42 @@ const services = [
 ];
 
 export default function CustomerHomePage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('all');
   const [filteredServices, setFilteredServices] = useState(services);
   const [bookingModal, setBookingModal] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [businessIdMap, setBusinessIdMap] = useState<Record<string, number>>(
+    {}
+  );
   const [form] = Form.useForm();
+
+  // Fetch business IDs from API and map by name to ensure links match DB
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/businesses?limit=100`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data?.data) return;
+        const map: Record<string, number> = {};
+        for (const biz of data.data) {
+          if (biz?.name && typeof biz.id === 'number') {
+            map[biz.name] = biz.id;
+          }
+        }
+        setBusinessIdMap(map);
+      } catch {
+        // silent fail; links will fall back to search
+      }
+    };
+    fetchBusinesses();
+  }, []);
 
   const handleSearch = () => {
     let filtered = services;
@@ -154,77 +191,7 @@ export default function CustomerHomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <svg
-                className="w-9 h-9"
-                viewBox="0 0 24 24"
-                fill="url(#gradient)"
-              >
-                <defs>
-                  <linearGradient
-                    id="gradient"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="100%"
-                  >
-                    <stop offset="0%" stopColor="#667eea" />
-                    <stop offset="100%" stopColor="#764ba2" />
-                  </linearGradient>
-                </defs>
-                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 18c-3.86-.85-6-4.37-6-8.5V8.37l6-3.55 6 3.55V11.5c0 4.13-2.14 7.65-6 8.5z" />
-              </svg>
-              <span className="text-2xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                QTime
-              </span>
-            </Link>
-
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
-              <Link
-                href="#services"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
-              >
-                Үйлчилгээ
-              </Link>
-              <Link
-                href="#about"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
-              >
-                Бидний тухай
-              </Link>
-              <Link
-                href="#contact"
-                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
-              >
-                Холбоо барих
-              </Link>
-              <Tag icon={<EnvironmentOutlined />} color="purple">
-                Улаанбаатар
-              </Tag>
-              <Link href="/dashboard">
-                <Button type="default" className="rounded-xl">
-                  Бизнес нэвтрэх
-                </Button>
-              </Link>
-              <Button type="default" className="rounded-xl">
-                Нэвтрэх
-              </Button>
-              <Button
-                type="primary"
-                className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-none hover:from-indigo-600 hover:to-purple-700"
-              >
-                Бүртгүүлэх
-              </Button>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Hero Banner */}
       <div className="bg-white border-b border-gray-100">
@@ -390,7 +357,7 @@ export default function CustomerHomePage() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredServices.map((service) => (
+          {filteredServices.map((service, idx) => (
             <Card
               key={service.id}
               hoverable
@@ -405,7 +372,25 @@ export default function CustomerHomePage() {
                 </div>
               }
               className="rounded-2xl overflow-hidden"
-              onClick={() => openBookingModal(service)}
+              actions={[
+                <Button
+                  key="book"
+                  type="link"
+                  onClick={() => openBookingModal(service)}
+                >
+                  Цаг захиалах
+                </Button>,
+                <Link
+                  key="detail"
+                  href={
+                    businessIdMap[service.name]
+                      ? `/yellow-books/${businessIdMap[service.name]}`
+                      : '/search'
+                  }
+                >
+                  Дэлгэрэнгүй
+                </Link>,
+              ]}
             >
               <div className="space-y-3">
                 <h3 className="text-xl font-bold text-gray-900">
