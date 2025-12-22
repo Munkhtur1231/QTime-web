@@ -20,7 +20,6 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import AppHeader from '../../components/AppHeader';
 
 const { Option } = Select;
@@ -108,7 +107,6 @@ const services = [
 ];
 
 export default function CustomerHomePage() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('all');

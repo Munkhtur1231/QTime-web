@@ -64,7 +64,13 @@ export default function UserMenu({ name, role }: UserMenuProps) {
         <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-50">
           <div className="py-1">
             <div className="px-4 py-2 border-b border-border">
-              <p className="text-sm font-medium text-foreground">{name}</p>
+              <Link
+                href="/user/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="text-sm font-medium text-foreground hover:underline"
+              >
+                {name}
+              </Link>
               {role && (
                 <p className="text-xs text-muted capitalize">
                   {role.toLowerCase()}

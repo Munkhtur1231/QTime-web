@@ -4,13 +4,13 @@ import { NextResponse } from 'next/server';
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isAuthenticated = !!req.auth;
-  const userRole = req.auth?.user?.role;
+  const rawRole = req.auth?.user?.role;
+  const userRole = rawRole ? String(rawRole).toUpperCase() : undefined;
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/signin', '/signup', '/', '/yellow-books', '/search'];
-  const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  const publicRoutes = ['/signin', '/signup', '/yellow-books', '/search'];
+  const isPublicRoute =
+    pathname === '/' || publicRoutes.some((route) => pathname.startsWith(route));
 
   // API auth routes are always public
   if (pathname.startsWith('/api/auth')) {
@@ -34,6 +34,21 @@ export default auth((req) => {
     if (userRole !== 'SUPERADMIN') {
       return NextResponse.redirect(new URL('/', req.url));
     }
+  }
+
+  // Protect business dashboard for admin roles only
+  if (pathname.startsWith('/dashboard')) {
+    if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
+      return NextResponse.redirect(new URL('/user/dashboard', req.url));
+    }
+  }
+
+  // Ensure users land on user dashboard
+  if (pathname.startsWith('/user/dashboard')) {
+    if (!userRole || userRole === 'USER') {
+      return NextResponse.next();
+    }
+    // admins can still reach their dashboard
   }
 
   return NextResponse.next();

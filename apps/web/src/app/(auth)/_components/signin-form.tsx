@@ -29,7 +29,8 @@ export default function SigninForm() {
     try {
       const result = await loginAction(data);
       if (result.success) {
-        router.push('/');
+        const target = result.redirectTo || '/';
+        router.push(target);
         router.refresh();
       } else {
         setError(result.error || 'Login failed');

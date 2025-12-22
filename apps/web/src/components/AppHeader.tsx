@@ -3,8 +3,13 @@
 import Link from 'next/link';
 import { Button, Tag } from 'antd';
 import { EnvironmentOutlined } from '@ant-design/icons';
+import { useSession, SessionProvider } from 'next-auth/react';
+import UserMenu from './UserMenu';
 
-export default function AppHeader() {
+function AppHeaderContent() {
+  const { data: session } = useSession();
+  const user = session?.user;
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-6 py-5">
@@ -51,34 +56,47 @@ export default function AppHeader() {
             </Link>
             <Link
               href="/search"
-              className="text-gray-900 hover:text-indigo-600 font-semibold transition-colors"
+              className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
             >
               Бизнесүүд
             </Link>
             <Tag icon={<EnvironmentOutlined />} color="purple">
               Улаанбаатар
             </Tag>
-            <Link href="/dashboard">
-              <Button type="default" className="rounded-xl">
-                Бизнес нэвтрэх
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button type="default" className="rounded-xl">
-                Нэвтрэх
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button
-                type="primary"
-                className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-none hover:from-indigo-600 hover:to-purple-700"
-              >
-                Бүртгүүлэх
-              </Button>
-            </Link>
+            {user ? (
+              <UserMenu
+                name={user.name || user.email || 'Хэрэглэгч'}
+                role={user.role as string | undefined}
+              />
+            ) : (
+              <>
+                <Link href="/signin">
+                  <Button type="default" className="rounded-xl">
+                    Нэвтрэх
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button
+                    type="primary"
+                    className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-none hover:from-indigo-600 hover:to-purple-700"
+                  >
+                    Бүртгүүлэх
+                  </Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>
     </header>
+  );
+}
+
+export default function AppHeader() {
+  // Defensive: wrap in SessionProvider in case a parent forgets
+  return (
+    <SessionProvider>
+      <AppHeaderContent />
+    </SessionProvider>
   );
 }

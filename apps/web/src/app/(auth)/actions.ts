@@ -66,10 +66,31 @@ export async function registerAction(
 
 export async function loginAction(
   formData: unknown
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; redirectTo?: string }> {
   try {
     // Validate with zod
     const validatedData = LoginSchema.parse(formData);
+
+    // Peek role from API to choose redirect
+    // Default to user dashboard to avoid sending end-users to the business dashboard
+    let redirectTo = '/user/dashboard';
+    try {
+      const peek = await fetch(`${baseUrl}/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validatedData),
+      });
+      if (peek.ok) {
+        const result: ApiResponse<{ user: { role: string } }> =
+          await peek.json();
+        const role = result?.data?.user?.role;
+        if (role === 'ADMIN' || role === 'SUPERADMIN') {
+          redirectTo = '/dashboard';
+        }
+      }
+    } catch {
+      // if peek fails, fall back to default redirect
+    }
 
     // Use NextAuth signIn with credentials
     const result = await signIn('credentials', {
@@ -85,7 +106,7 @@ export async function loginAction(
       };
     }
 
-    return { success: true };
+    return { success: true, redirectTo };
   } catch (error) {
     if (error instanceof ZodError) {
       const firstError = error.issues[0];

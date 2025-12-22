@@ -28,11 +28,11 @@ export default function AuthLayout({
             <div className="lg:hidden text-center mb-8">
               <Link href="/" className="inline-block">
                 <h1 className="text-2xl font-bold text-foreground mb-1">
-                  Radnaa&apos;s Directory
+                  Qtime 
                 </h1>
               </Link>
               <p className="text-muted text-sm">
-                Өөрт ойрхон бизнесүүдтэй харьцаарай
+                Өөрт ойрхон бизнесүүдтэй холбогдоорой
               </p>
             </div>
 
