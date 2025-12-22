@@ -1,4 +1,3 @@
-// @ts-nocheck - Generated file, ignore TypeScript errors
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
