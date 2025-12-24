@@ -11,6 +11,7 @@ import { AiSearchService } from '../services/ai-search.service';
 import { catchAsync } from '../utils/catchAsync';
 import { ResponseHandler } from '../utils/response';
 import { AppError } from '../utils/AppError';
+import { prisma } from '../utils/prisma';
 
 export class BusinessController extends BaseController<
   Business,
@@ -38,13 +39,52 @@ export class BusinessController extends BaseController<
       'description',
     ]);
 
+    // Check if filtering by adminUserId
+    const adminUserId = req.query.adminUserId;
+    let adminFilter = {};
+
+    if (adminUserId) {
+      adminFilter = {
+        admins: {
+          some: {
+            userId: parseInt(adminUserId as string),
+          },
+        },
+      };
+    }
+
     return {
       where: {
         ...filters.where,
         ...search.where,
+        ...adminFilter,
       },
     };
   }
+
+  /**
+   * Override create to add current user as admin
+   */
+  override create = catchAsync(async (req: Request, res: Response) => {
+    const item = await this.service.create(req.body as CreateBusinessDTO);
+
+    // Add current user as admin of the new business
+    const userId = (req as any).userId;
+    if (userId && item.id) {
+      await prisma.businessAdmin.create({
+        data: {
+          businessId: item.id,
+          userId: typeof userId === 'string' ? parseInt(userId) : userId,
+        },
+      });
+    }
+
+    return ResponseHandler.created(
+      res,
+      item,
+      `${this.resourceName} created successfully`
+    );
+  });
 
   /**
    * AI-powered semantic search

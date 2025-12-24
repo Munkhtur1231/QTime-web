@@ -5,3 +5,4 @@ export * from './business-parent-category.schema.js';
 export * from './business.schema.js';
 export * from './business-address.schema.js';
 export * from './review.schema.js';
+export * from './booking.schema.js';

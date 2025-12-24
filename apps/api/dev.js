@@ -15,7 +15,7 @@ console.log(`📂 Running: ${distPath}\n`);
 
 const server = spawn('node', [distPath], {
   stdio: 'inherit',
-  shell: true,
+  shell: false,
 });
 
 server.on('close', (code) => {

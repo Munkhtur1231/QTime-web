@@ -1,5 +1,6 @@
 import AppHeader from '../../components/AppHeader';
 import Footer from '../../components/Footer';
+import 'leaflet/dist/leaflet.css';
 
 export default function YellowBooksLayout({
   children,

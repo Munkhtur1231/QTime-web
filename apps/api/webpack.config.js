@@ -8,6 +8,15 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
+  externals: [
+    // Don't bundle workspace libraries - require them at runtime
+    function ({ request }, callback) {
+      if (request && request.startsWith('@businessdirectory/')) {
+        return callback(null, 'commonjs ' + request);
+      }
+      callback();
+    },
+  ],
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',

@@ -28,6 +28,12 @@ enum VerificationTokenAction {
   RESET
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   email          String          @unique
@@ -40,6 +46,7 @@ model User {
   updatedAt      DateTime        @updatedAt
   reviews        Reviews[]
   admins         BusinessAdmin[]
+  bookings       Booking[]
 }
 
 model VerificationToken {
@@ -94,6 +101,7 @@ model Business {
   addresses    BusinessAddress[]
   reviews      Reviews[]
   admins       BusinessAdmin[]
+  bookings     Booking[]
 }
 
 model BusinessAddress {
@@ -141,4 +149,23 @@ model RichReviewContent {
   updatedAt DateTime @updatedAt
   reviewId  Int      @unique
   review    Reviews? @relation(fields: [reviewId], references: [id])
+}
+
+model Booking {
+  id            Int           @id @default(autoincrement())
+  businessId    Int
+  business      Business      @relation(fields: [businessId], references: [id])
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  customerName  String
+  customerPhone String
+  startAt       DateTime
+  status        BookingStatus @default(PENDING)
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId, startAt])
+  @@index([businessId, startAt])
+  @@unique([businessId, startAt])
 }

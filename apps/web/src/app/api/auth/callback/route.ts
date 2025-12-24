@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const token = searchParams.get('token');
+    const callbackUrl = searchParams.get('callbackUrl') || '/';
 
     if (!token) {
       return NextResponse.redirect(
@@ -82,8 +83,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Redirect to home page on success
-    return NextResponse.redirect(new URL('/', request.url));
+    // Redirect to callbackUrl on success
+    return NextResponse.redirect(new URL(callbackUrl, request.url));
   } catch (error) {
     console.error('OAuth callback error:', error);
     return NextResponse.redirect(

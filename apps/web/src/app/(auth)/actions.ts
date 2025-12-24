@@ -71,8 +71,8 @@ export async function loginAction(
     // Validate with zod
     const validatedData = LoginSchema.parse(formData);
 
-    // Peek role from API to choose redirect
-    // Default to user dashboard to avoid sending end-users to the business dashboard
+    // Peek role and business admin status from API to choose redirect
+    // Default to user dashboard
     let redirectTo = '/user/dashboard';
     try {
       const peek = await fetch(`${baseUrl}/users/login`, {
@@ -81,11 +81,36 @@ export async function loginAction(
         body: JSON.stringify(validatedData),
       });
       if (peek.ok) {
-        const result: ApiResponse<{ user: { role: string } }> =
-          await peek.json();
+        const result: ApiResponse<{
+          user: { id: number; role: string };
+          token: string;
+        }> = await peek.json();
         const role = result?.data?.user?.role;
+        const userId = result?.data?.user?.id;
+        const token = result?.data?.token;
+
+        // Check if user is ADMIN or SUPERADMIN
         if (role === 'ADMIN' || role === 'SUPERADMIN') {
           redirectTo = '/dashboard';
+        }
+        // Check if user is business admin
+        else if (userId && token) {
+          try {
+            const businessRes = await fetch(`${baseUrl}/businesses?limit=1`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (businessRes.ok) {
+              const businessData = await businessRes.json();
+              // If user has businesses, they're a business admin
+              if (businessData?.data && businessData.data.length > 0) {
+                redirectTo = '/business-dashboard';
+              }
+            }
+          } catch {
+            // If check fails, use default redirect
+          }
         }
       }
     } catch {

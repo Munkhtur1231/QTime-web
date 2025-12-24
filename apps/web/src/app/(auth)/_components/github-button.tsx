@@ -4,10 +4,19 @@ import Link from 'next/link';
 
 const backendUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3333';
 
-export default function GitHubButton() {
+interface GitHubButtonProps {
+  callbackUrl?: string;
+}
+
+export default function GitHubButton({ callbackUrl = '/' }: GitHubButtonProps) {
+  // Pass callbackUrl as state parameter to GitHub OAuth
+  const githubUrl = `${backendUrl}/auth/github?callbackUrl=${encodeURIComponent(
+    callbackUrl
+  )}`;
+
   return (
     <Link
-      href={`${backendUrl}/auth/github`}
+      href={githubUrl}
       className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 h-10 w-full bg-foreground text-background hover:bg-foreground/90"
     >
       <svg

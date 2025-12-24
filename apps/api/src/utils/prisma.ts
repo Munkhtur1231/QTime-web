@@ -1,4 +1,4 @@
-import { PrismaClient } from '@businessdirectory/database';
+import { PrismaClient } from '@prisma/client';
 
 // Singleton pattern for Prisma Client
 class PrismaService {

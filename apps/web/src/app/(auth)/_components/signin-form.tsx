@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@businessdirectory/database';
 import { loginAction } from '../actions';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import GitHubButton from './github-button';
 
 export default function SigninForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const {
     register,
@@ -27,9 +29,9 @@ export default function SigninForm() {
     setError(null);
 
     try {
-      const result = await loginAction(data);
+      const result = await loginAction(data, callbackUrl);
       if (result.success) {
-        const target = result.redirectTo || '/';
+        const target = result.redirectTo || callbackUrl;
         router.push(target);
         router.refresh();
       } else {
@@ -51,7 +53,7 @@ export default function SigninForm() {
         </p>
       </div>
 
-      <GitHubButton />
+      <GitHubButton callbackUrl={callbackUrl} />
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

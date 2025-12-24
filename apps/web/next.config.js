@@ -1,6 +1,5 @@
 //@ts-check
 
- 
 const { composePlugins, withNx } = require('@nx/next');
 
 /**
@@ -12,12 +11,19 @@ const nextConfig = {
   nx: {},
   output: 'standalone',
   images: {
-    domains: [
-      'localhost',
-      '127.0.0.1',
-      'localhost:3000',
-      'picsum.photos',
-      'images.unsplash.com',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+      },
     ],
   },
 };

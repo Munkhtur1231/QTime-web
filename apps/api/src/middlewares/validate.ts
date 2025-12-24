@@ -5,11 +5,26 @@ import { AppError } from '../utils/AppError';
 export const validate = (schema: ZodType) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
+      // Check if schema is defined
+      if (!schema || typeof schema.parseAsync !== 'function') {
+        console.error(
+          'Invalid schema provided to validate middleware:',
+          schema
+        );
+        next(
+          new AppError(
+            'Internal validation error: Invalid schema',
+            500,
+            'INVALID_SCHEMA'
+          )
+        );
+        return;
+      }
+
+      // Validate body directly with the schema
+      const validated = await schema.parseAsync(req.body);
+      // Replace req.body with validated data
+      req.body = validated;
       next();
     } catch (error) {
       if (error instanceof ZodError) {

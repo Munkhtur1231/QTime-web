@@ -74,6 +74,8 @@ export const ReviewsScalarFieldEnumSchema = z.enum(['id','businessId','userId','
 
 export const RichReviewContentScalarFieldEnumSchema = z.enum(['id','content','createdAt','updatedAt','reviewId']);
 
+export const BookingScalarFieldEnumSchema = z.enum(['id','businessId','userId','customerName','customerPhone','startAt','status','note','createdAt','updatedAt']);
+
 export const SortOrderSchema = z.enum(['asc','desc']);
 
 export const NullableJsonNullValueInputSchema = z.enum(['DbNull','JsonNull',]).transform((value) => value === 'JsonNull' ? Prisma.JsonNull : value === 'DbNull' ? Prisma.DbNull : value);
@@ -100,6 +102,8 @@ export const ReviewsOrderByRelevanceFieldEnumSchema = z.enum(['comment']);
 
 export const RichReviewContentOrderByRelevanceFieldEnumSchema = z.enum(['content']);
 
+export const BookingOrderByRelevanceFieldEnumSchema = z.enum(['customerName','customerPhone','note']);
+
 export const UserRoleSchema = z.enum(['USER','ADMIN','SUPERADMIN']);
 
 export type UserRoleType = `${z.infer<typeof UserRoleSchema>}`
@@ -107,6 +111,10 @@ export type UserRoleType = `${z.infer<typeof UserRoleSchema>}`
 export const VerificationTokenActionSchema = z.enum(['VERIFY','RESET']);
 
 export type VerificationTokenActionType = `${z.infer<typeof VerificationTokenActionSchema>}`
+
+export const BookingStatusSchema = z.enum(['PENDING','CONFIRMED','CANCELLED']);
+
+export type BookingStatusType = `${z.infer<typeof BookingStatusSchema>}`
 
 /////////////////////////////////////////
 // MODELS
@@ -258,3 +266,22 @@ export const RichReviewContentSchema = z.object({
 })
 
 export type RichReviewContent = z.infer<typeof RichReviewContentSchema>
+
+/////////////////////////////////////////
+// BOOKING SCHEMA
+/////////////////////////////////////////
+
+export const BookingSchema = z.object({
+  status: BookingStatusSchema,
+  id: z.number().int(),
+  businessId: z.number().int(),
+  userId: z.number().int(),
+  customerName: z.string(),
+  customerPhone: z.string(),
+  startAt: z.coerce.date(),
+  note: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export type Booking = z.infer<typeof BookingSchema>

@@ -4,16 +4,26 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { logoutAction } from '../app/(auth)/actions';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 interface UserMenuProps {
   name: string;
   role?: string;
 }
 
+// Role-уудын монгол орчуулга
+const roleLabels: Record<string, string> = {
+  USER: 'Хэрэглэгч',
+  ADMIN: 'Админ',
+  SUPERADMIN: 'Супер Админ',
+};
+
 export default function UserMenu({ name, role }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isBusinessAdmin, setIsBusinessAdmin] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { data: session } = useSession();
 
   // Get first letter of first name
   const getInitials = (name: string): string => {
@@ -27,6 +37,33 @@ export default function UserMenu({ name, role }: UserMenuProps) {
   };
 
   const initials = getInitials(name);
+
+  // Check if user is business admin
+  useEffect(() => {
+    const checkBusinessAdmin = async () => {
+      if (!session?.user?.id || !session?.user?.accessToken) return;
+
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/businesses?adminUserId=${session.user.id}&limit=1`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.user.accessToken}`,
+            },
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          setIsBusinessAdmin(data?.data && data.data.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking business admin:', error);
+      }
+    };
+
+    checkBusinessAdmin();
+  }, [session?.user?.id, session?.user?.accessToken]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -61,22 +98,32 @@ export default function UserMenu({ name, role }: UserMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-md shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-background border border-border rounded-md shadow-lg z-50">
           <div className="py-1">
             <div className="px-4 py-2 border-b border-border">
-              <Link
-                href="/user/dashboard"
-                onClick={() => setIsOpen(false)}
-                className="text-sm font-medium text-foreground hover:underline"
-              >
-                {name}
-              </Link>
+              <div className="text-sm font-medium text-foreground">{name}</div>
               {role && (
                 <p className="text-xs text-muted capitalize">
-                  {role.toLowerCase()}
+                  {roleLabels[role] || role.toLowerCase()}
                 </p>
               )}
             </div>
+            <Link
+              href="/user/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2 text-sm text-foreground hover:bg-foreground/5 transition-colors"
+            >
+              Хэрэглэгчийн самбар
+            </Link>
+            {(isBusinessAdmin || role === 'ADMIN' || role === 'SUPERADMIN') && (
+              <Link
+                href="/business-dashboard"
+                onClick={() => setIsOpen(false)}
+                className="block px-4 py-2 text-sm text-foreground hover:bg-foreground/5 transition-colors"
+              >
+                Бизнес удирдлага
+              </Link>
+            )}
             {role === 'SUPERADMIN' && (
               <Link
                 href="/editor"
@@ -88,7 +135,7 @@ export default function UserMenu({ name, role }: UserMenuProps) {
             )}
             <button
               onClick={handleSignOut}
-              className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-foreground/5 transition-colors"
+              className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-foreground/5 transition-colors border-t border-border"
             >
               Гарах
             </button>

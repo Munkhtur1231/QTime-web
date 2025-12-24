@@ -42,10 +42,15 @@ passport.deserializeUser((id, done) => {
  * GET /api/v1/auth/github
  * Initiate GitHub OAuth flow
  */
-router.get(
-  '/github',
-  passport.authenticate('github', { scope: ['user:email'], session: false })
-);
+router.get('/github', (req, res, next) => {
+  // Store callbackUrl in session/state for later use
+  const callbackUrl = (req.query.callbackUrl as string) || '/';
+  passport.authenticate('github', {
+    scope: ['user:email'],
+    session: false,
+    state: Buffer.from(JSON.stringify({ callbackUrl })).toString('base64'),
+  })(req, res, next);
+});
 
 /**
  * GET /api/v1/auth/github/callback

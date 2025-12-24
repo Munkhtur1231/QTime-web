@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Input,
   Select,
@@ -11,180 +12,288 @@ import {
   Form,
   DatePicker,
   message,
+  Spin,
+  Alert,
+  Divider,
+  Avatar,
 } from 'antd';
 import {
   SearchOutlined,
   EnvironmentOutlined,
   CalendarOutlined,
   StarFilled,
+  ClockCircleOutlined,
+  PhoneOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import AppHeader from '../../components/AppHeader';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 
 const { Option } = Select;
 
-// Sample services data
-const services = [
-  {
-    id: 1,
-    name: 'Luxury Hair Salon',
-    businessId: 1,
-    category: 'salon',
-    location: 'Сүхбаатар дүүрэг',
-    rating: 4.8,
-    reviews: 124,
-    price: '20,000₮',
-    image:
-      'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&h=300&fit=crop',
-    services: ['Үс засах', 'Буржгар хийх', 'Будах'],
-  },
-  {
-    id: 2,
-    name: 'Beauty & Spa Center',
-    businessId: 2,
-    category: 'beauty',
-    location: 'Чингэлтэй дүүрэг',
-    rating: 4.9,
-    reviews: 89,
-    price: '35,000₮',
-    image:
-      'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=400&h=300&fit=crop',
-    services: ['Маникюр', 'Педикюр', 'Массаж'],
-  },
-  {
-    id: 3,
-    name: 'Dental Care Clinic',
-    businessId: 3,
-    category: 'dental',
-    location: 'Баянгол дүүрэг',
-    rating: 4.7,
-    reviews: 156,
-    price: '50,000₮',
-    image:
-      'https://images.unsplash.com/photo-1606811841689-23dfddce3e95?w=400&h=300&fit=crop',
-    services: ['Шүдний үзлэг', 'Цэвэрлэгээ', 'Сувилал'],
-  },
-  {
-    id: 4,
-    name: 'Wellness Massage',
-    businessId: 4,
-    category: 'massage',
-    location: 'Хан-Уул дүүрэг',
-    rating: 4.6,
-    reviews: 67,
-    price: '40,000₮',
-    image:
-      'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=300&fit=crop',
-    services: ['Массаж', 'СПА', 'Физик эмчилгээ'],
-  },
-  {
-    id: 5,
-    name: 'Medical Center',
-    businessId: 5,
-    category: 'medical',
-    location: 'Сонгинохайрхан дүүрэг',
-    rating: 4.5,
-    reviews: 234,
-    price: '30,000₮',
-    image:
-      'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=300&fit=crop',
-    services: ['Ерөнхий үзлэг', 'Шинжилгээ', 'Зөвлөгөө'],
-  },
-  {
-    id: 6,
-    name: 'Premium Barbershop',
-    businessId: 6,
-    category: 'salon',
-    location: 'Сүхбаатар дүүрэг',
-    rating: 4.9,
-    reviews: 178,
-    price: '25,000₮',
-    image:
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=300&fit=crop',
-    services: ['Үс засах', 'Сахал засах', 'Massage'],
-  },
+// Боломжтой цагууд
+const timeSlots = [
+  '09:00',
+  '09:30',
+  '10:00',
+  '10:30',
+  '11:00',
+  '11:30',
+  '12:00',
+  '12:30',
+  '13:00',
+  '13:30',
+  '14:00',
+  '14:30',
+  '15:00',
+  '15:30',
+  '16:00',
+  '16:30',
+  '17:00',
+  '17:30',
+  '18:00',
 ];
 
+interface Business {
+  id: number;
+  name: string;
+  photo: string;
+  description: string | null;
+  category: {
+    id: number;
+    name: string;
+    icon: string;
+    parentCategory: { id: number; icon: string; name: string };
+  };
+  addresses: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  }[];
+  _count: {
+    reviews: number;
+  };
+  averageReviewRating: number | null;
+}
+
 export default function CustomerHomePage() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('all');
-  const [filteredServices, setFilteredServices] = useState(services);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(true);
   const [bookingModal, setBookingModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<any>(null);
-  const [businessIdMap, setBusinessIdMap] = useState<Record<string, number>>(
-    {}
-  );
+  const [selectedService, setSelectedService] = useState<Business | null>(null);
   const [form] = Form.useForm();
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Fetch business IDs from API and map by name to ensure links match DB
+  // Fetch businesses from API
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/businesses?limit=100`,
           { cache: 'no-store' }
         );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data?.data) return;
-        const map: Record<string, number> = {};
-        for (const biz of data.data) {
-          if (biz?.name && typeof biz.id === 'number') {
-            map[biz.name] = biz.id;
-          }
+        if (!res.ok) {
+          message.error('Үйлчилгээнүүдийг ачааллахад алдаа гарлаа');
+          return;
         }
-        setBusinessIdMap(map);
-      } catch {
-        // silent fail; links will fall back to search
+        const data = await res.json();
+        if (data?.data) {
+          setBusinesses(data.data);
+          setFilteredBusinesses(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+        message.error('Үйлчилгээнүүдийг ачааллахад алдаа гарлаа');
+      } finally {
+        setLoading(false);
       }
     };
     fetchBusinesses();
   }, []);
 
   const handleSearch = () => {
-    let filtered = services;
+    let filtered = businesses;
 
     if (searchQuery) {
       filtered = filtered.filter(
-        (s) =>
-          s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          s.services.some((service) =>
-            service.toLowerCase().includes(searchQuery.toLowerCase())
-          )
+        (b) =>
+          b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.category.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     if (location) {
-      filtered = filtered.filter((s) => s.location.includes(location));
+      filtered = filtered.filter((b) =>
+        b.addresses.some((addr) => addr.address.includes(location))
+      );
     }
 
     if (category !== 'all') {
-      filtered = filtered.filter((s) => s.category === category);
+      filtered = filtered.filter(
+        (b) =>
+          b.category.parentCategory.name.toLowerCase() ===
+          category.toLowerCase()
+      );
     }
 
-    setFilteredServices(filtered);
+    setFilteredBusinesses(filtered);
     message.success(`${filtered.length} үйлчилгээ олдлоо`);
   };
 
   const filterByCategory = (cat: string) => {
     setCategory(cat);
-    const filtered =
-      cat === 'all' ? services : services.filter((s) => s.category === cat);
-    setFilteredServices(filtered);
+    let filtered = businesses;
+
+    if (cat !== 'all') {
+      filtered = businesses.filter(
+        (b) =>
+          b.category.parentCategory.name.toLowerCase() === cat.toLowerCase()
+      );
+    }
+
+    setFilteredBusinesses(filtered);
   };
 
-  const openBookingModal = (service: any) => {
-    setSelectedService(service);
+  const openBookingModal = (business: Business) => {
+    setSelectedService(business);
     setBookingModal(true);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setBookedSlots([]);
+    form.resetFields();
+
+    // Хэрэглэгчийн мэдээллийг урьдчилан бөглөх
+    if (session?.user) {
+      form.setFieldsValue({
+        name: session.user.name || '',
+        phone: '',
+      });
+    }
   };
 
-  const handleBooking = (values: any) => {
-    console.log('Booking:', values, selectedService);
-    message.success('Захиалга амжилттай баталгаажлаа!');
-    setBookingModal(false);
-    form.resetFields();
+  // Сонгосон өдрийн захиалагдсан цагуудыг авах
+  const fetchBookedSlots = async (date: Dayjs, businessId: number) => {
+    try {
+      setLoadingSlots(true);
+      const dateStr = date.format('YYYY-MM-DD');
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookings/slots?businessId=${businessId}&date=${dateStr}`,
+        { cache: 'no-store' }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        const slots = (data.data || [])
+          .filter((b: any) => b.status !== 'CANCELLED')
+          .map((b: any) => {
+            const d = new Date(b.startAt);
+            return `${d.getHours().toString().padStart(2, '0')}:${d
+              .getMinutes()
+              .toString()
+              .padStart(2, '0')}`;
+          });
+        setBookedSlots(slots);
+      }
+    } catch (error) {
+      console.error('Error fetching booked slots:', error);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const onDateChange = (date: Dayjs | null) => {
+    setSelectedDate(date);
+    setSelectedTime(null);
+    form.setFieldValue('time', undefined);
+    if (date && selectedService) {
+      fetchBookedSlots(date, selectedService.id);
+    } else {
+      setBookedSlots([]);
+    }
+  };
+
+  const onTimeSelect = (time: string) => {
+    setSelectedTime(time);
+  };
+
+  const handleBooking = async (values: any) => {
+    if (!selectedService?.id) {
+      message.error('Үйлчилгээ сонгоно уу');
+      return;
+    }
+
+    if (!selectedTime) {
+      message.error('Цаг сонгоно уу');
+      return;
+    }
+
+    const accessToken = session?.user?.accessToken;
+    if (!accessToken) {
+      message.warning('Цаг захиалахын тулд нэвтэрнэ үү');
+      router.push('/signin');
+      return;
+    }
+
+    try {
+      setBookingLoading(true);
+      const dateStr = values?.date?.format?.('YYYY-MM-DD');
+      if (!dateStr) {
+        message.error('Огноо сонгоно уу');
+        return;
+      }
+
+      const localDate = new Date(`${dateStr}T${selectedTime}:00`);
+      const startAt = localDate.toISOString();
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          businessId: selectedService.id,
+          customerName: values.name,
+          customerPhone: values.phone,
+          startAt,
+          note: values.note,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        message.error(err?.message || 'Захиалга хийхэд алдаа гарлаа');
+        return;
+      }
+
+      message.success('Захиалга амжилттай баталгаажлаа!');
+      setBookingModal(false);
+      form.resetFields();
+      setSelectedDate(null);
+      setBookedSlots([]);
+    } catch (error) {
+      console.error('Booking error:', error);
+      message.error('Захиалга хийхэд алдаа гарлаа');
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   return (
@@ -238,12 +347,14 @@ export default function CustomerHomePage() {
                   <Option value="Сонгинохайрхан">Сонгинохайрхан дүүрэг</Option>
                 </Select>
 
-                <Input
+                <DatePicker
                   size="large"
                   placeholder="Огноо сонгох"
-                  prefix={<CalendarOutlined className="text-xl text-black" />}
-                  readOnly
-                  className="rounded-2xl !text-sm [&_input]:!pl-2 border border-gray-300 hover:border-gray-400 shadow-sm [&_input]:text-gray-400 cursor-pointer"
+                  className="w-full rounded-2xl border border-gray-300 my-2 hover:border-gray-400 shadow-sm [&_.ant-picker-input>input]:!text-sm"
+                  format="YYYY-MM-DD"
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf('day')
+                  }
                 />
 
                 <Button
@@ -251,7 +362,7 @@ export default function CustomerHomePage() {
                   size="large"
                   block
                   onClick={handleSearch}
-                  className="!h-14 !text-lg !font-bold rounded-2xl !bg-blue-500 border-none hover:!bg-blue-600 shadow-lg"
+                  className="!h-14 !text-lg !font-bold rounded-2xl !bg-blue-500 border-none hover:!bg-blue-600 shadow-lg mt-4"
                 >
                   Хайх
                 </Button>
@@ -297,21 +408,10 @@ export default function CustomerHomePage() {
             Бүгд
           </Button>
           <Button
-            type={category === 'salon' ? 'primary' : 'default'}
-            onClick={() => filterByCategory('salon')}
+            type={category === 'beauty & wellness' ? 'primary' : 'default'}
+            onClick={() => filterByCategory('beauty & wellness')}
             className={`rounded-[25px] ${
-              category === 'salon'
-                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-none'
-                : ''
-            }`}
-          >
-            💇 Үсчин
-          </Button>
-          <Button
-            type={category === 'beauty' ? 'primary' : 'default'}
-            onClick={() => filterByCategory('beauty')}
-            className={`rounded-[25px] ${
-              category === 'beauty'
+              category === 'beauty & wellness'
                 ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-none'
                 : ''
             }`}
@@ -319,168 +419,290 @@ export default function CustomerHomePage() {
             💅 Гоо сайхан
           </Button>
           <Button
-            type={category === 'massage' ? 'primary' : 'default'}
-            onClick={() => filterByCategory('massage')}
+            type={category === 'health & medical' ? 'primary' : 'default'}
+            onClick={() => filterByCategory('health & medical')}
             className={`rounded-[25px] ${
-              category === 'massage'
+              category === 'health & medical'
                 ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-none'
                 : ''
             }`}
           >
-            💆 Массаж
+            🏥 Эрүүл мэнд
           </Button>
           <Button
-            type={category === 'dental' ? 'primary' : 'default'}
-            onClick={() => filterByCategory('dental')}
+            type={category === 'professional services' ? 'primary' : 'default'}
+            onClick={() => filterByCategory('professional services')}
             className={`rounded-[25px] ${
-              category === 'dental'
+              category === 'professional services'
                 ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-none'
                 : ''
             }`}
           >
-            🦷 Шүд
-          </Button>
-          <Button
-            type={category === 'medical' ? 'primary' : 'default'}
-            onClick={() => filterByCategory('medical')}
-            className={`rounded-[25px] ${
-              category === 'medical'
-                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 border-none'
-                : ''
-            }`}
-          >
-            🏥 Эмнэлэг
+            💼 Мэргэжлийн үйлчилгээ
           </Button>
         </div>
 
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredServices.map((service, idx) => (
-            <Card
-              key={service.id}
-              hoverable
-              cover={
-                <div className="h-56 bg-gradient-to-br from-indigo-500 to-purple-600 relative overflow-hidden">
-                  <Image
-                    src={service.image}
-                    alt={service.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              }
-              className="rounded-2xl overflow-hidden"
-              actions={[
-                <Button
-                  key="book"
-                  type="link"
-                  onClick={() => openBookingModal(service)}
-                >
-                  Цаг захиалах
-                </Button>,
-                <Link
-                  key="detail"
-                  href={
-                    businessIdMap[service.name]
-                      ? `/yellow-books/${businessIdMap[service.name]}`
-                      : '/search'
-                  }
-                >
-                  Дэлгэрэнгүй
-                </Link>,
-              ]}
-            >
-              <div className="space-y-3">
-                <h3 className="text-xl font-bold text-gray-900">
-                  {service.name}
-                </h3>
-                <p className="text-sm text-gray-600 flex items-center gap-2">
-                  <EnvironmentOutlined className="text-gray-400" />
-                  {service.location}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {service.services.map((s, idx) => (
-                    <Tag key={idx} color="blue">
-                      {s}
-                    </Tag>
-                  ))}
-                </div>
-                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <div className="flex items-center gap-1">
-                    <StarFilled className="text-yellow-500" />
-                    <span className="font-semibold">{service.rating}</span>
-                    <span className="text-gray-500 text-sm">
-                      ({service.reviews})
-                    </span>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <Spin size="large" />
+          </div>
+        ) : filteredBusinesses.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-xl text-gray-500">Үйлчилгээ олдсонгүй</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredBusinesses.map((business) => (
+              <Card
+                key={business.id}
+                hoverable
+                cover={
+                  <div className="h-56 bg-gradient-to-br from-indigo-500 to-purple-600 relative overflow-hidden">
+                    <Image
+                      src={
+                        business.photo ||
+                        'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop'
+                      }
+                      alt={business.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
-                  <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    {service.price}
-                  </span>
+                }
+                className="rounded-2xl overflow-hidden"
+                actions={[
+                  <Button
+                    key="book"
+                    type="link"
+                    onClick={() => openBookingModal(business)}
+                  >
+                    Цаг захиалах
+                  </Button>,
+                  <Link key="detail" href={`/yellow-books/${business.id}`}>
+                    Дэлгэрэнгүй
+                  </Link>,
+                ]}
+              >
+                <div className="space-y-3">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {business.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 flex items-center gap-2">
+                    <EnvironmentOutlined className="text-gray-400" />
+                    {business.addresses[0]?.address || 'Хаяг байхгүй'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Tag color="blue" className="flex items-center gap-1">
+                      <span>{business.category.icon}</span>
+                      {business.category.name}
+                    </Tag>
+                    <Tag color="purple">
+                      {business.category.parentCategory.name}
+                    </Tag>
+                  </div>
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-1">
+                      <StarFilled className="text-yellow-500" />
+                      <span className="font-semibold">
+                        {business.averageReviewRating || 'N/A'}
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        ({business._count.reviews})
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Booking Modal */}
       <Modal
-        title={`${selectedService?.name} - Цаг захиалах`}
+        title={null}
         open={bookingModal}
-        onCancel={() => setBookingModal(false)}
+        onCancel={() => {
+          setBookingModal(false);
+          setSelectedDate(null);
+          setSelectedTime(null);
+          setBookedSlots([]);
+          form.resetFields();
+        }}
         footer={null}
-        width={600}
+        width={550}
+        destroyOnHidden
       >
-        <Form form={form} layout="vertical" onFinish={handleBooking}>
-          <Form.Item
-            label="Нэр"
-            name="name"
-            rules={[{ required: true, message: 'Нэрээ оруулна уу' }]}
-          >
-            <Input size="large" placeholder="Таны нэр" />
-          </Form.Item>
-          <Form.Item
-            label="Утас"
-            name="phone"
-            rules={[{ required: true, message: 'Утасны дугаар оруулна уу' }]}
-          >
-            <Input size="large" placeholder="99119911" />
-          </Form.Item>
-          <Form.Item
-            label="Огноо"
-            name="date"
-            rules={[{ required: true, message: 'Огноо сонгоно уу' }]}
-          >
-            <DatePicker size="large" className="w-full" />
-          </Form.Item>
-          <Form.Item
-            label="Цаг"
-            name="time"
-            rules={[{ required: true, message: 'Цаг сонгоно уу' }]}
-          >
-            <Select size="large" placeholder="Цаг сонгох">
-              <Option value="09:00">09:00</Option>
-              <Option value="10:00">10:00</Option>
-              <Option value="11:00">11:00</Option>
-              <Option value="13:00">13:00</Option>
-              <Option value="14:00">14:00</Option>
-              <Option value="15:00">15:00</Option>
-              <Option value="16:00">16:00</Option>
-              <Option value="17:00">17:00</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              block
-              className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-none h-12 font-semibold hover:from-indigo-600 hover:to-purple-700"
-            >
-              Захиалга батлах
-            </Button>
-          </Form.Item>
-        </Form>
+        {selectedService && (
+          <div>
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b">
+              <Avatar
+                src={selectedService.photo}
+                size={64}
+                shape="square"
+                className="rounded-xl"
+              />
+              <div>
+                <h2 className="text-xl font-bold">{selectedService.name}</h2>
+                <p className="text-gray-500 flex items-center gap-1">
+                  <EnvironmentOutlined />
+                  {selectedService.addresses[0]?.address || 'Хаяг байхгүй'}
+                </p>
+              </div>
+            </div>
+
+            {!session?.user && (
+              <Alert
+                type="warning"
+                message="Цаг захиалахын тулд нэвтэрнэ үү"
+                showIcon
+                className="mb-4"
+                action={
+                  <Link href="/signin">
+                    <Button size="small" type="primary">
+                      Нэвтрэх
+                    </Button>
+                  </Link>
+                }
+              />
+            )}
+
+            <Form form={form} layout="vertical" onFinish={handleBooking}>
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  label={
+                    <span className="flex items-center gap-1">
+                      <UserOutlined /> Нэр
+                    </span>
+                  }
+                  name="name"
+                  rules={[{ required: true, message: 'Нэрээ оруулна уу' }]}
+                >
+                  <Input size="large" placeholder="Таны нэр" />
+                </Form.Item>
+                <Form.Item
+                  label={
+                    <span className="flex items-center gap-1">
+                      <PhoneOutlined /> Утас
+                    </span>
+                  }
+                  name="phone"
+                  rules={[
+                    { required: true, message: 'Утасны дугаар оруулна уу' },
+                    {
+                      pattern: /^[0-9]{8}$/,
+                      message: '8 оронтой дугаар оруулна уу',
+                    },
+                  ]}
+                >
+                  <Input size="large" placeholder="99119911" maxLength={8} />
+                </Form.Item>
+              </div>
+
+              <Form.Item
+                label={
+                  <span className="flex items-center gap-1">
+                    <CalendarOutlined /> Огноо
+                  </span>
+                }
+                name="date"
+                rules={[{ required: true, message: 'Огноо сонгоно уу' }]}
+              >
+                <DatePicker
+                  size="large"
+                  className="w-full"
+                  placeholder="Огноо сонгох"
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf('day')
+                  }
+                  onChange={onDateChange}
+                  format="YYYY-MM-DD"
+                />
+              </Form.Item>
+
+              {/* Time Selection - separate from Form.Item to allow button clicks */}
+              <div className="mb-6">
+                <label className="flex items-center gap-1 mb-2 font-medium">
+                  <ClockCircleOutlined /> Цаг{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                {!selectedDate ? (
+                  <div className="text-gray-400 text-center py-4 border rounded-lg">
+                    Эхлээд огноо сонгоно уу
+                  </div>
+                ) : loadingSlots ? (
+                  <div className="text-center py-4">
+                    <Spin size="small" /> Цагуудыг ачаалж байна...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-2">
+                    {timeSlots.map((time) => {
+                      const isBooked = bookedSlots.includes(time);
+                      const isSelected = selectedTime === time;
+
+                      return (
+                        <button
+                          key={time}
+                          type="button"
+                          disabled={isBooked}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!isBooked) {
+                              onTimeSelect(time);
+                            }
+                          }}
+                          className={`px-3 py-2 rounded-md border text-sm font-medium transition-all ${
+                            isBooked
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
+                              : isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
+                          }`}
+                        >
+                          {time}
+                          {isBooked && (
+                            <span className="text-xs block">Захиалагдсан</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {!selectedTime && selectedDate && (
+                  <p className="text-red-500 text-sm mt-1">Цаг сонгоно уу</p>
+                )}
+              </div>
+
+              <Form.Item label="Тэмдэглэл (заавал биш)" name="note">
+                <Input.TextArea
+                  rows={2}
+                  placeholder="Нэмэлт мэдээлэл..."
+                  maxLength={200}
+                />
+              </Form.Item>
+
+              <Divider />
+
+              <Form.Item className="mb-0">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  block
+                  loading={bookingLoading}
+                  disabled={!session?.user}
+                  icon={<CheckCircleOutlined />}
+                  className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 border-none h-12 font-semibold hover:from-indigo-600 hover:to-purple-700"
+                >
+                  Захиалга батлах
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
+        )}
       </Modal>
     </div>
   );

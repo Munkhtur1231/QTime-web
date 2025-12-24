@@ -24,7 +24,7 @@ businessdirectory/
 
 ### Хэрэгтэй зүйлс
 
-- At least Node.js 20.16.0!! (Анхаараарай. Хуучин дээр ажиллахгүй)
+- Node.js 20.x (>= 20.16.0) эсвэл 22.x LTS (Node 24 дээр dev ажиллуулахад crash гарч магадгүй)
 - MySQL database
 - Git
 
@@ -73,26 +73,29 @@ import хийхдээ "@" ашиглахаар алдаа гараад байг�
 
 Доорх алхам Docker ашигласан жишээ. DB нэр, хэрэглэгчийн нууц үгийг `.env` доторх `DATABASE_URL`-тэй тааруул.
 
-1. MySQL контейнер асаах  
+1. MySQL контейнер асаах
+
    ```bash
    docker run --name qtime-mysql -p 3306:3306 \
      -e MYSQL_ROOT_PASSWORD=it \
      -e MYSQL_DATABASE=qtimedb \
      -d mysql:8
    ```
+
    (Өгөгдлөө persistent хадгалах бол `-v $PWD/.data/mysql:/var/lib/mysql` нэмээд ажиллуул.)
 
 2. Орчноо шалгах  
    `.env` дахь `DATABASE_URL` -д дараах утгыг оруулсан эсэхийг шалга:  
    `mysql://root:it@localhost:3306/qtimedb`
 
-3. Schema apply болон db seed хийх  
+3. Schema apply болон db seed хийх
+
    ```bash
    npx nx run @businessdirectory/database:prisma:push
    npm run db:seed
    ```
 
-4. Шалгах (нууц үг `it`):  
+4. Шалгах (нууц үг `it`):
    ```bash
    mysql -h 127.0.0.1 -uroot -p qtimedb -e "show tables;"
    ```

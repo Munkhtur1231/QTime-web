@@ -41,6 +41,18 @@ export class AuthController {
     // passport-github2 provides profile with: id, username, displayName, emails, photos
     const profile = req.user as GitHubProfile | undefined;
 
+    // Parse callbackUrl from state
+    let callbackUrl = '/';
+    try {
+      const state = req.query.state as string;
+      if (state) {
+        const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
+        callbackUrl = decoded.callbackUrl || '/';
+      }
+    } catch {
+      // Ignore parse errors, use default callbackUrl
+    }
+
     if (!profile) {
       return res.redirect(
         `${
@@ -71,8 +83,12 @@ export class AuthController {
 
     const { token } = await this.userService.oauthLogin(oauthData);
 
-    // Redirect to Next.js callback route with token
+    // Redirect to Next.js callback route with token and callbackUrl
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/api/auth/callback?token=${token}`);
+    res.redirect(
+      `${frontendUrl}/api/auth/callback?token=${token}&callbackUrl=${encodeURIComponent(
+        callbackUrl
+      )}`
+    );
   });
 }

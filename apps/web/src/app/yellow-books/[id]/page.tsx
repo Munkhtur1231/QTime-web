@@ -12,15 +12,23 @@ type BusinessDetail = {
   description: string | null;
   link: string | null;
   category?: { name: string };
-  addresses?: { id: number; address: string; latitude: number; longitude: number }[];
+  addresses?: {
+    id: number;
+    address: string;
+    latitude: number;
+    longitude: number;
+  }[];
   _count?: { reviews: number };
   averageReviewRating?: number;
 };
 
 async function getBusiness(id: string): Promise<BusinessDetail> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/businesses/${id}`, {
-    cache: 'no-store',
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/businesses/${id}`,
+    {
+      cache: 'no-store',
+    }
+  );
 
   if (res.status === 404) {
     notFound();
@@ -59,20 +67,27 @@ export default async function BusinessDetailPage({
           <div className="flex-1 space-y-3">
             <h1 className="text-3xl font-bold">{business.name}</h1>
             {business.category?.name && (
-              <p className="text-sm text-gray-500">Ангилал: {business.category.name}</p>
+              <p className="text-sm text-gray-500">
+                Ангилал: {business.category.name}
+              </p>
             )}
-            {business.summary && <p className="text-lg text-gray-700">{business.summary}</p>}
+            {business.summary && (
+              <p className="text-lg text-gray-700">{business.summary}</p>
+            )}
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-              {typeof business.averageReviewRating === 'number' && (
+              {business.averageReviewRating && (
                 <span className="font-semibold">
-                  {business.averageReviewRating.toFixed(1)} ⭐
+                  {Number(business.averageReviewRating).toFixed(1)} ⭐
                 </span>
               )}
               {business._count?.reviews !== undefined && (
                 <span>{business._count.reviews} сэтгэгдэл</span>
               )}
               {business.link && (
-                <Link href={business.link} className="text-indigo-600 hover:underline">
+                <Link
+                  href={business.link}
+                  className="text-indigo-600 hover:underline"
+                >
                   {business.link}
                 </Link>
               )}
@@ -85,7 +100,9 @@ export default async function BusinessDetailPage({
         {business.description && (
           <div className="p-6 border border-border rounded-2xl bg-gray-50">
             <h2 className="text-xl font-semibold mb-3">Танилцуулга</h2>
-            <p className="text-gray-700 leading-relaxed">{business.description}</p>
+            <p className="text-gray-700 leading-relaxed">
+              {business.description}
+            </p>
           </div>
         )}
 

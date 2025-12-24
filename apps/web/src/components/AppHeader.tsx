@@ -1,14 +1,87 @@
 'use client';
 
 import Link from 'next/link';
-import { Button, Tag } from 'antd';
-import { EnvironmentOutlined } from '@ant-design/icons';
+import { Button, Tag, Dropdown, MenuProps } from 'antd';
+import {
+  EnvironmentOutlined,
+  MenuOutlined,
+  HomeOutlined,
+  SearchOutlined,
+  UserOutlined,
+  ShopOutlined,
+  BookOutlined,
+} from '@ant-design/icons';
 import { useSession, SessionProvider } from 'next-auth/react';
 import UserMenu from './UserMenu';
+import { useState, useEffect } from 'react';
 
 function AppHeaderContent() {
   const { data: session } = useSession();
   const user = session?.user;
+  const [isBusinessAdmin, setIsBusinessAdmin] = useState(false);
+
+  // Check if user is business admin
+  useEffect(() => {
+    const checkBusinessAdmin = async () => {
+      if (!user?.id || !session?.user?.accessToken) return;
+
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/businesses?adminUserId=${user.id}&limit=1`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.user.accessToken}`,
+            },
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          setIsBusinessAdmin(data?.data && data.data.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking business admin:', error);
+      }
+    };
+
+    checkBusinessAdmin();
+  }, [user?.id, session?.user?.accessToken]);
+
+  const mobileMenuItems: MenuProps['items'] = [
+    {
+      key: 'home',
+      label: <Link href="/">Нүүр</Link>,
+      icon: <HomeOutlined />,
+    },
+    {
+      key: 'customer',
+      label: <Link href="/customer">Үйлчилгээ хайх</Link>,
+      icon: <SearchOutlined />,
+    },
+    {
+      key: 'yellow-books',
+      label: <Link href="/yellow-books">Yellow Books</Link>,
+      icon: <BookOutlined />,
+    },
+    ...(user
+      ? [
+          {
+            key: 'dashboard',
+            label: <Link href="/user/dashboard">Миний самбар</Link>,
+            icon: <UserOutlined />,
+          },
+        ]
+      : []),
+    ...(isBusinessAdmin || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+      ? [
+          {
+            key: 'business',
+            label: <Link href="/business-dashboard">Бизнес удирдлага</Link>,
+            icon: <ShopOutlined />,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
@@ -16,11 +89,7 @@ function AppHeaderContent() {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <svg
-              className="w-9 h-9"
-              viewBox="0 0 24 24"
-              fill="url(#gradient)"
-            >
+            <svg className="w-9 h-9" viewBox="0 0 24 24" fill="url(#gradient)">
               <defs>
                 <linearGradient
                   id="gradient"
@@ -41,25 +110,37 @@ function AppHeaderContent() {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
             <Link
-              href="/#services"
+              href="/customer"
               className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
             >
-              Үйлчилгээ
+              Үйлчилгээ хайх
             </Link>
             <Link
-              href="/#about"
-              className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+              href="/yellow-books"
+              className="text-amber-600 hover:text-amber-700 font-medium transition-colors flex items-center gap-1"
             >
-              Бидний тухай
+              Газрын зураг
             </Link>
-            <Link
-              href="/search"
-              className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
-            >
-              Бизнесүүд
-            </Link>
+            {user && (
+              <Link
+                href="/user/dashboard"
+                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+              >
+                Миний самбар
+              </Link>
+            )}
+            {/* {(isBusinessAdmin ||
+              user?.role === 'ADMIN' ||
+              user?.role === 'SUPERADMIN') && (
+              <Link
+                href="/business-dashboard"
+                className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+              >
+                Бизнес удирдлага
+              </Link>
+            )} */}
             <Tag icon={<EnvironmentOutlined />} color="purple">
               Улаанбаатар
             </Tag>
@@ -86,6 +167,25 @@ function AppHeaderContent() {
               </>
             )}
           </nav>
+
+          {/* Mobile Menu */}
+          <div className="md:hidden flex items-center gap-3">
+            {user ? (
+              <UserMenu
+                name={user.name || user.email || 'Хэрэглэгч'}
+                role={user.role as string | undefined}
+              />
+            ) : (
+              <Link href="/signin">
+                <Button type="primary" size="small" className="rounded-lg">
+                  Нэвтрэх
+                </Button>
+              </Link>
+            )}
+            <Dropdown menu={{ items: mobileMenuItems }} trigger={['click']}>
+              <Button icon={<MenuOutlined />} />
+            </Dropdown>
+          </div>
         </div>
       </div>
     </header>

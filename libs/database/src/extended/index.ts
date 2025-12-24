@@ -2,6 +2,7 @@ import {
   Business,
   BusinessCategory,
   BusinessParentCategory,
+  Booking,
   Reviews,
   RichReviewContent,
 } from '@businessdirectory/database';
@@ -45,6 +46,17 @@ export type ReviewsListResponse = Reviews & {
 export type BusinessParentCategoryListResponse = BusinessParentCategory & {
   _count: { categories: number };
   categories: BusinessCategory[];
+};
+
+export type BookingListResponse = Booking & {
+  business: { id: number; name: string; photo: string };
+  user: {
+    id: number;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    phone: string | null;
+  };
 };
 export type BusinessProfileResponse = Business & {
   category: {

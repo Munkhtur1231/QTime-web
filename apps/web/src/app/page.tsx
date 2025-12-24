@@ -19,11 +19,12 @@ export default function RoleSelectionPage() {
                 ⏱️ QTime • Цаг захиалга
               </div>
               <h1 className="text-3xl md:text-4xl font-black text-white mt-4 drop-shadow-sm leading-tight">
-              Цаг захиалгын платформ
+                Цаг захиалгын платформ
               </h1>
               <p className="text-white/80 mt-3 text-sm md:text-base max-w-3xl leading-relaxed">
-                Үйлчилгээ захиалах эсвэл бизнесээ удирдах сонголтоо хийнэ үү. Цаг
-                захиалга, хуваарь, хэрэглэгчтэй харилцах бүх хэрэгслийг нэг дороос.
+                Үйлчилгээ захиалах эсвэл бизнесээ удирдах сонголтоо хийнэ үү.
+                Цаг захиалга, хуваарь, хэрэглэгчтэй харилцах бүх хэрэгслийг нэг
+                дороос.
               </p>
             </div>
           </div>
@@ -47,7 +48,7 @@ export default function RoleSelectionPage() {
             </Link>
 
             <Link
-              href="/auth/login"
+              href="/signin?callbackUrl=/business-dashboard"
               className="group p-4 md:p-5 rounded-2xl bg-white text-gray-900 shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 border border-white/60"
             >
               <div className="flex items-center gap-4">
@@ -77,7 +78,6 @@ export default function RoleSelectionPage() {
               <span className="text-lg">📊</span> Бодит цагийн тайлан
             </div>
           </div> */}
-
         </div>
       </div>
     </div>
