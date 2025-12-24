@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@businessdirectory/database';
@@ -29,7 +29,7 @@ export default function SigninForm() {
     setError(null);
 
     try {
-      const result = await loginAction(data, callbackUrl);
+      const result = await loginAction(data);
       if (result.success) {
         const target = result.redirectTo || callbackUrl;
         router.push(target);

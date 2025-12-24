@@ -91,13 +91,56 @@ export class BookingController extends BaseController<
 
     // If businessId query param is present, use public endpoint logic
     if (req.query.businessId && req.query.date) {
-      return this.getBookingsForBusiness(req, res);
+      const pagination = QueryBuilder.getPagination(req);
+      const sort = QueryBuilder.getSort(req);
+      const filter = this.getFilterParams(req);
+
+      const { data, total } = await this.bookingService.findAll(
+        pagination,
+        sort,
+        filter
+      );
+
+      // Only return minimal info (startAt, status) for privacy
+      const minimalData = data.map((b) => ({
+        id: b.id,
+        startAt: b.startAt,
+        status: b.status,
+      }));
+
+      return ResponseHandler.paginated(
+        res,
+        minimalData,
+        pagination.page,
+        pagination.limit,
+        total,
+        'Bookings retrieved successfully'
+      );
     }
 
     if (authReq.userRole !== 'ADMIN' && authReq.userRole !== 'SUPERADMIN') {
       return ResponseHandler.success(res, [], 'Forbidden', 403);
     }
-    return super.getAll(req, res);
+
+    // Call base logic directly (can't use super with class fields)
+    const pagination = QueryBuilder.getPagination(req);
+    const sort = QueryBuilder.getSort(req);
+    const filter = this.getFilterParams(req);
+
+    const { data, total } = await this.bookingService.findAll(
+      pagination,
+      sort,
+      filter
+    );
+
+    return ResponseHandler.paginated(
+      res,
+      data,
+      pagination.page,
+      pagination.limit,
+      total,
+      'Booking retrieved successfully'
+    );
   });
 
   // User dashboard: list own bookings
