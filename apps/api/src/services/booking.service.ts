@@ -68,8 +68,34 @@ export class BookingService extends BaseService<
 
   async createWithUserId(
     data: CreateBookingDTO,
-    userId: number
+    userId: number,
+    userEmail?: string | null
   ): Promise<BookingListResponse> {
+    if (!userId || Number.isNaN(userId)) {
+      throw new AppError('User not found', 401, 'USER_NOT_FOUND');
+    }
+
+    // Ensure user exists; recover by email if token is stale
+    let resolvedUserId = userId;
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    if (!existingUser && userEmail) {
+      const userByEmail = await prisma.user.findUnique({
+        where: { email: userEmail },
+        select: { id: true },
+      });
+      if (userByEmail) {
+        resolvedUserId = userByEmail.id;
+      }
+    }
+
+    if (!existingUser && resolvedUserId === userId) {
+      throw new AppError('User not found', 401, 'USER_NOT_FOUND');
+    }
+
     const business = await prisma.business.findUnique({
       where: { id: data.businessId },
       select: { id: true },
@@ -105,7 +131,7 @@ export class BookingService extends BaseService<
     const booking = await this.prismaAny.booking.create({
       data: {
         businessId: data.businessId,
-        userId,
+        userId: resolvedUserId,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
         startAt,

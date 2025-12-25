@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { Strategy as GitHubStrategy, Profile } from 'passport-github2';
+import axios from 'axios';
 import { AuthController } from '../controllers/auth.controller';
 
 const router = Router();
@@ -23,8 +24,36 @@ passport.use(
       profile: Profile,
       done: VerifyCallback
     ) => {
-      // Pass profile to done callback - it will be available in req.user
-      return done(null, profile);
+      try {
+        if (!profile.emails?.length) {
+          const { data } = await axios.get<
+            Array<{ email: string; primary: boolean; verified: boolean }>
+          >('https://api.github.com/user/emails', {
+            headers: {
+              Authorization: `token ${accessToken}`,
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'businessdirectory-app',
+            },
+          });
+
+          const primaryEmail =
+            data.find((e) => e.primary && e.verified) ||
+            data.find((e) => e.verified) ||
+            data[0];
+
+          if (primaryEmail) {
+            profile.emails = [
+              {
+                value: primaryEmail.email,
+              },
+            ];
+          }
+        }
+
+        return done(null, profile);
+      } catch (error) {
+        return done(error as Error);
+      }
     }
   )
 );

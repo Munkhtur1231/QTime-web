@@ -3,14 +3,11 @@
  * Production-ready Express.js API with authentication, validation, and CRUD operations
  */
 
-import dotenv from 'dotenv';
+import './load-env';
 import { createApp } from './app';
 import { logger } from './utils/logger';
 import { gracefulShutdown } from './utils/gracefulShutdown';
 import PrismaService from './utils/prisma';
-
-// Load environment variables
-dotenv.config();
 
 const app = createApp();
 

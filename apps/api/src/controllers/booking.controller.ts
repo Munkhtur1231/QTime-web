@@ -192,7 +192,8 @@ export class BookingController extends BaseController<
     const authReq = req as AuthenticatedRequest;
     const booking = await this.bookingService.createWithUserId(
       req.body as CreateBookingDTO,
-      authReq.userId
+      authReq.userId,
+      authReq.email
     );
 
     return ResponseHandler.created(
